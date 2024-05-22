@@ -1,0 +1,6 @@
+@DefaultBot.Bot_HostAddress = http://localhost:5139
+
+GET {{DefaultBot.Bot_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
