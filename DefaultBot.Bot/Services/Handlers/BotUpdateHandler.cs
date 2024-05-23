@@ -9,15 +9,16 @@ namespace DefaultBot.Bot.Services.Handlers
 {
     public class BotUpdateHandler : IUpdateHandler
     {
-        private readonly IUserRepository _userRepository;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public BotUpdateHandler(IUserRepository userRepository)
+        public BotUpdateHandler(IServiceScopeFactory serviceScopeFactory)
         {
-            _userRepository = userRepository;
+            _serviceScopeFactory = serviceScopeFactory;
         }
+
         public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -27,6 +28,7 @@ namespace DefaultBot.Bot.Services.Handlers
                 UpdateType.Message => HandleMessageAsync(botClient, update.Message, cancellationToken),
                 _ => HandleRandomMessageAsync(botClient, update.Message, cancellationToken),
             };
+
             try
             {
                 await message;
@@ -39,7 +41,7 @@ namespace DefaultBot.Bot.Services.Handlers
 
         private Task HandleRandomMessageAsync(ITelegramBotClient botClient, Message? message, CancellationToken cancellationToken)
         {
-            Console.WriteLine("{0} send {1} type message", message.From.Username, message.Type);
+            Console.WriteLine("{0} sent {1} type message", message.From.Username, message?.Type);
             return Task.CompletedTask;
         }
 
@@ -47,22 +49,28 @@ namespace DefaultBot.Bot.Services.Handlers
         {
             try
             {
-                var user = new UserModel()
+                using (var scope = _serviceScopeFactory.CreateScope())
                 {
-                    Id = message.Chat.Id,
-                    Username = message.From.Username
-                };
-                await _userRepository.Add(user);
+                    var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
-                await botClient.SendTextMessageAsync(
-                    chatId: message.Chat.Id,
-                    text: $"You said:\n<i>{message.Text}</i>",
-                    parseMode: ParseMode.Html,
-                    cancellationToken: cancellationToken);
+                    var user = new UserModel()
+                    {
+                        Id = message.Chat.Id,
+                        Username = message.From.Username
+                    };
+
+                    await userRepository.AddNewUser(user);
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: $"You said:\n<i>{message.Text}</i>",
+                        parseMode: ParseMode.Html,
+                        cancellationToken: cancellationToken);
+                }
             }
             catch (Exception exception)
             {
-                Console.WriteLine(exception.Message.ToString());
+                Console.WriteLine(exception.Message);
             }
         }
     }

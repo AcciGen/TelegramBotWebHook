@@ -29,16 +29,24 @@ namespace DefaultBot.Bot.Services.BackgroundServices
                         await SendNotification(user, stoppingToken);
                     }
                 }
-                await Task.Delay(TimeSpan.FromDays(1), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
         }
 
         private Task SendNotification(UserModel user, CancellationToken token)
         {
-            return _client.SendTextMessageAsync(
-                chatId: user.Id,
-                text: "What's up, my brother?",
-                cancellationToken: token);
+            try
+            {
+                return _client.SendTextMessageAsync(
+                    chatId: user.Id,
+                    text: "What's up?",
+                    cancellationToken: token);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Someone blocked me ~_~");
+                return Task.CompletedTask;
+            }
         }
     }
 }

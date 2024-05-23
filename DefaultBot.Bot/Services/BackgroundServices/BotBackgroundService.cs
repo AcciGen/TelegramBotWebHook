@@ -1,5 +1,6 @@
 ﻿using Telegram.Bot.Polling;
 using Telegram.Bot;
+using DefaultBot.Bot.Services.UserRepositories;
 
 namespace DefaultBot.Bot.Services.BackgroundServices
 {

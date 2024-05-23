@@ -7,13 +7,19 @@ namespace DefaultBot.Bot.Services.UserRepositories
     public class UserRepository : IUserRepository
     {
         private readonly BotDbContext _appBotDbContext;
+
         public UserRepository(BotDbContext context)
         {
             _appBotDbContext = context;
         }
 
-        public async Task Add(UserModel user)
+        public async Task AddNewUser(UserModel user)
         {
+            var res = await _appBotDbContext.Users.FirstOrDefaultAsync(x => x.Id == user.Id);
+            if (res != null)
+            {
+                return;
+            }
             await _appBotDbContext.Users.AddAsync(user);
             await _appBotDbContext.SaveChangesAsync();
         }

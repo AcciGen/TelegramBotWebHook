@@ -27,9 +27,10 @@ namespace DefaultBot.Bot
             });
             builder.Services.AddSingleton(provider => new TelegramBotClient("6907018906:AAGC8-0Z8ePyREKkuZL2nxN0Rei75krJF-I"));
 
+            builder.Services.AddSingleton<IUpdateHandler, BotUpdateHandler>();
+
             builder.Services.AddHostedService<BotBackgroundService>();
             builder.Services.AddHostedService<HelloBackgroundService>();
-            builder.Services.AddSingleton<IUpdateHandler, BotUpdateHandler>();
 
             var app = builder.Build();
 
