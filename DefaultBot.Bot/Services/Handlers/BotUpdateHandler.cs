@@ -7,26 +7,23 @@ using Telegram.Bot;
 
 namespace DefaultBot.Bot.Services.Handlers
 {
-    public class BotUpdateHandler : IUpdateHandler
+    public class BotUpdateHandler 
     {
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly ITelegramBotClient _botClient;
+        private readonly IUserRepository _userRepository;
 
-        public BotUpdateHandler(IServiceScopeFactory serviceScopeFactory)
+        public BotUpdateHandler(ITelegramBotClient botClient, IUserRepository userRepository)
         {
-            _serviceScopeFactory = serviceScopeFactory;
+            _botClient = botClient;
+            _userRepository = userRepository;
         }
 
-        public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
-        public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+        public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
         {
             var message = update.Type switch
             {
-                UpdateType.Message => HandleMessageAsync(botClient, update.Message, cancellationToken),
-                _ => HandleRandomMessageAsync(botClient, update.Message, cancellationToken),
+                UpdateType.Message => HandleMessageAsync(_botClient, update.Message, cancellationToken),
+                _ => HandleRandomMessageAsync(_botClient, update.Message, cancellationToken),
             };
 
             try
@@ -49,24 +46,20 @@ namespace DefaultBot.Bot.Services.Handlers
         {
             try
             {
-                using (var scope = _serviceScopeFactory.CreateScope())
+                var user = new UserModel()
                 {
-                    var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+                    Id = message.Chat.Id,
+                    Username = message.From.Username
+                };
 
-                    var user = new UserModel()
-                    {
-                        Id = message.Chat.Id,
-                        Username = message.From.Username
-                    };
+                await _userRepository.AddNewUser(user);
 
-                    await userRepository.AddNewUser(user);
-
-                    await botClient.SendTextMessageAsync(
-                        chatId: message.Chat.Id,
-                        text: $"You said:\n<i>{message.Text}</i>",
-                        parseMode: ParseMode.Html,
-                        cancellationToken: cancellationToken);
-                }
+                await botClient.SendTextMessageAsync(
+                    chatId: message.Chat.Id,
+                    text: $"You said:\n<i>{message.Text}</i>",
+                    parseMode: ParseMode.Html,
+                    cancellationToken: cancellationToken);
+                
             }
             catch (Exception exception)
             {

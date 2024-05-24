@@ -6,7 +6,6 @@ using DefaultBot.Bot.Services.Handlers;
 using DefaultBot.Bot.Services.UserRepositories;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
-using Telegram.Bot.Polling;
 
 namespace DefaultBot.Bot
 {
@@ -17,7 +16,7 @@ namespace DefaultBot.Bot
             var builder = WebApplication.CreateBuilder(args);
             builder.Logging.ClearProviders();
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddNewtonsoftJson();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
@@ -26,7 +25,7 @@ namespace DefaultBot.Bot
             {
                 options.UseNpgsql(connectionString: "Host=localhost;Port=5432;Database=TelegramBotDb;User Id=postgres;Password=1352;");
             });
-            builder.Services.AddSingleton<IUpdateHandler, BotUpdateHandler>();
+            builder.Services.AddScoped<BotUpdateHandler>();
 
             var botConfig = builder.Configuration.GetSection("BotConfiguration")
             .Get<BotConfiguration>()!;
@@ -39,12 +38,6 @@ namespace DefaultBot.Bot
             builder.Services.AddHostedService<HelloBackgroundService>();
 
             var app = builder.Build();
-
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
 
             app.UseRouting();
 

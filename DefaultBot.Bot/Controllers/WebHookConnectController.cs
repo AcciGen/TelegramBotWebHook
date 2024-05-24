@@ -6,8 +6,6 @@ using Telegram.Bot.Types;
 
 namespace DefaultBot.Bot.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     public class WebHookConnectController : ControllerBase
     {
         private readonly BotUpdateHandler _handler;
@@ -22,7 +20,7 @@ namespace DefaultBot.Bot.Controllers
         [HttpPost]
         public async Task<IActionResult> Connector([FromBody] Update update, CancellationToken cancellation)
         {
-            await _handler.HandleUpdateAsync(_client, update, cancellation);
+            await _handler.HandleUpdateAsync(update,cancellation);
 
             return Ok();
         }
