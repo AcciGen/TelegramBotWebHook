@@ -1,37 +1,34 @@
 ﻿using Telegram.Bot.Polling;
 using Telegram.Bot;
 using DefaultBot.Bot.Services.UserRepositories;
+using Telegram.Bot.Types.Enums;
+using DefaultBot.Bot.Models.Entities;
 
 namespace DefaultBot.Bot.Services.BackgroundServices
 {
     public class BotBackgroundService : BackgroundService
     {
-        private readonly TelegramBotClient _client;
-        private readonly IUpdateHandler _handler;
+        private readonly BotConfiguration _configuration;
+        private readonly ITelegramBotClient _botClient;
 
-        public BotBackgroundService(TelegramBotClient client, IUpdateHandler handler)
+        public BotBackgroundService(IConfiguration configuration, ITelegramBotClient botClient)
         {
-            _client = client;
-            _handler = handler;
+            _configuration = configuration.GetSection("BotConfiguration").Get<BotConfiguration>()!;
+            _botClient = botClient;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var me = await _client.GetMeAsync(stoppingToken);
+            var webhookAddress = $"{_configuration.HostAddress}/bot/{_configuration.Token}";
 
-            if (me == null)
-                return;
+            await _botClient.SendTextMessageAsync(
+                chatId: _configuration.MyChatId,
+                text: "Start weebhook");
 
-            Console.WriteLine("Start listening {0}", me.Username);
-
-            _client.StartReceiving(
-                _handler.HandleUpdateAsync,
-                _handler.HandlePollingErrorAsync,
-                new ReceiverOptions
-                {
-                    ThrowPendingUpdates = true
-                },
-                stoppingToken);
+            await _botClient.SetWebhookAsync(
+                url: webhookAddress,
+                allowedUpdates: Array.Empty<UpdateType>(),
+                cancellationToken: stoppingToken);
         }
     }
 }

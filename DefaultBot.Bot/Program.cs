@@ -1,4 +1,5 @@
 
+using DefaultBot.Bot.Models.Entities;
 using DefaultBot.Bot.Persistance;
 using DefaultBot.Bot.Services.BackgroundServices;
 using DefaultBot.Bot.Services.Handlers;
@@ -25,9 +26,14 @@ namespace DefaultBot.Bot
             {
                 options.UseNpgsql(connectionString: "Host=localhost;Port=5432;Database=TelegramBotDb;User Id=postgres;Password=1352;");
             });
-            builder.Services.AddSingleton(provider => new TelegramBotClient("6907018906:AAGC8-0Z8ePyREKkuZL2nxN0Rei75krJF-I"));
-
             builder.Services.AddSingleton<IUpdateHandler, BotUpdateHandler>();
+
+            var botConfig = builder.Configuration.GetSection("BotConfiguration")
+            .Get<BotConfiguration>()!;
+
+            builder.Services.AddHttpClient("webhook")
+                .AddTypedClient<ITelegramBotClient>(httpClient
+                    => new TelegramBotClient(botConfig.Token, httpClient));
 
             builder.Services.AddHostedService<BotBackgroundService>();
             builder.Services.AddHostedService<HelloBackgroundService>();
@@ -40,11 +46,27 @@ namespace DefaultBot.Bot
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            app.UseRouting();
 
-            app.UseAuthorization();
+            app.UseCors(ops =>
+            {
+                ops.AllowAnyHeader()
+                   .AllowAnyMethod()
+                   .AllowAnyOrigin();
+            });
 
-            app.MapControllers();
+
+            app.UseEndpoints(endpoints =>
+            {
+                var token = botConfig.Token;
+
+                endpoints.MapControllerRoute(
+                    name: "webhook",
+                    pattern: $"bot/{token}",
+                    new { controller = "WebHookConnect", action = "Connector" });
+
+                endpoints.MapControllers();
+            });
 
             app.Run();
         }
