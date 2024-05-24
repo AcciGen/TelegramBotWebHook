@@ -7,9 +7,9 @@ namespace DefaultBot.Bot.Services.BackgroundServices
     public class HelloBackgroundService : BackgroundService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly TelegramBotClient _client;
+        private readonly ITelegramBotClient _client;
 
-        public HelloBackgroundService(IServiceScopeFactory serviceScopeFactory, TelegramBotClient client)
+        public HelloBackgroundService(IServiceScopeFactory serviceScopeFactory, ITelegramBotClient client)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _client = client;
@@ -29,7 +29,7 @@ namespace DefaultBot.Bot.Services.BackgroundServices
                         await SendNotification(user, stoppingToken);
                     }
                 }
-                await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
             }
         }
 
@@ -39,7 +39,7 @@ namespace DefaultBot.Bot.Services.BackgroundServices
             {
                 return _client.SendTextMessageAsync(
                     chatId: user.Id,
-                    text: "What's up?",
+                    text: "What's up, my nigga?",
                     cancellationToken: token);
             }
             catch (Exception ex)
